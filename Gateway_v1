@@ -1,0 +1,218 @@
+// Improved using flag 
+
+#include <FirebaseESP32.h>
+#include <LiquidCrystal_I2C.h>
+#include <WiFi.h>
+#include "time.h"
+#include <Wire.h>
+#include <WiFiManager.h>
+
+LiquidCrystal_I2C lcd(0x3F, 16, 2);
+int dtime = 10000;
+int flag = 0;
+#define FIREBASE_HOST "https://suraj-project-88bc7-default-rtdb.asia-southeast1.firebasedatabase.app"
+#define FIREBASE_AUTH "AIzaSyAiFmLr3MneY6SZbr47QjwE40rgjzgfn0k"
+
+//Define FirebaseESP32 data object
+FirebaseData firebaseData;
+FirebaseJson json;
+
+
+#define RXp2 16               // change pin no. for different microcontroller 
+#define TXp2 17
+void setup() {
+
+  Serial.begin(9600);
+  Serial2.begin(9600, SERIAL_8N1, RXp2, TXp2);
+  lcd.begin();
+
+  lcd.backlight();
+
+
+  WiFi.mode(WIFI_STA); // explicitly set mode, esp defaults to STA+AP
+  // it is a good practice to make sure your code sets wifi mode how you want it.
+
+
+  //WiFiManager, Local intialization. Once its business is done, there is no need to keep it around
+  WiFiManager wm;
+
+  // reset settings - wipe stored credentials for testing
+  // these are stored by the esp library
+  //wm.resetSettings();
+
+  // Automatically connect using saved credentials,
+  // if connection fails, it starts an access point with the specified name ( "AutoConnectAP"),
+  // if empty will auto generate SSID, if password is blank it will be anonymous AP (wm.autoConnect())
+  // then goes into a blocking loop awaiting configuration and will return success result
+
+  bool res;
+  // res = wm.autoConnect(); // auto generated AP name from chipid
+  res = wm.autoConnect("LONGROOM BASEMENT"); // anonymous ap
+  //  res = wm.autoConnect("AutoConnectAP","password"); // password protected ap
+
+  if (!res) {
+    Serial.println("Failed to connect");
+    // ESP.restart();
+  }
+  else {
+    //if you get here you have connected to the WiFi
+    Serial.println("connected...yeey :)");
+  }
+  //connect to WiFi
+  // Serial.printf("Connecting to %s ", ssid);
+  WiFi.begin();
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
+    lcd.setCursor(0, 1);
+    lcd.print("connecting...");
+    delay (3000);
+    lcd.clear();
+  }
+  Serial.println(" CONNECTED");
+  lcd.setCursor(0, 1);
+  lcd.print("Connected");
+  delay (3000);
+  lcd.clear();
+
+
+  ////  disconnect WiFi as it's no longer needed
+  //  WiFi.disconnect(true);
+  //  WiFi.mode(WIFI_OFF);
+  //  //  Serial.println("Message Received at esp32 :  ");
+
+  Firebase.begin(FIREBASE_HOST, FIREBASE_AUTH);
+  Firebase.reconnectWiFi(true);
+
+  //Set database read timeout to 1 minute (max 15 minutes)
+  Firebase.setReadTimeout(firebaseData, 1000 * 60);
+  //tiny, small, medium, large and unlimited.
+  //Size and its write timeout e.g. tiny (1s), small (10s), medium (30s) and large (60s).
+  Firebase.setwriteSizeLimit(firebaseData, "tiny");
+
+  /*
+    This option allows get and delete functions (PUT and DELETE HTTP requests) works for device connected behind the
+    Firewall that allows only GET and POST requests.
+
+    Firebase.enableClassicRequest(firebaseData, true);
+  */
+
+  //String path = "/data";
+
+
+  Serial.println("------------------------------------");
+  Serial.println("Connected...");
+  delay(2000);
+  lcd.clear();
+
+}
+void loop() {
+  String Data = Serial2.readString();
+  Serial.println(Data);
+
+  String id1 = Data.substring(0, 1);
+  String T1 =  Data.substring(15, 17);
+  String H1 =  Data.substring(23, 25);
+  Serial.println(id1);
+  Serial.println(T1);
+  Serial.println(H1);
+
+  String id2 = Data.substring(27, 28);
+  String T2 =  Data.substring(42, 44);
+  String H2 =  Data.substring(50, 52);
+  Serial.println(id2);
+  Serial.println(T2);
+  Serial.println(H2);
+
+  String id3 = Data.substring(54, 55);
+  String T3 =  Data.substring(69, 71);
+  String H3 =  Data.substring(77, 72);
+  Serial.println(id2);
+  Serial.println(T2);
+  Serial.println(H2);
+
+
+  delay(2000);
+
+
+  if (id1 == String("1") && flag != 1)
+  {
+    Serial.println("My id is CAGE 1");
+    String T = Data.substring(15, 17);
+    String H = Data.substring(23, 25);
+    //Serial.println(T); // This is Tempreture
+    //Serial.println(H); // This is Humidity
+    Serial.println(T.toInt());
+    Serial.println(H.toInt());
+    lcd.setCursor(4, 0);
+    lcd.print("CAGE 1");
+    lcd.setCursor(0, 1);
+    lcd.print("Temp:" + String(T));
+    lcd.setCursor(9, 1);
+    lcd.print("Humi:" + String(H));
+    json.set("/CAGE1 Temp", T.toInt());
+    json.set("/CAGE1 Humi", H.toInt());
+    Firebase.updateNode(firebaseData, "/CAN", json);
+    flag = 1;
+    delay(2000);
+    return;
+  }
+  delay(100);
+  // Serial2.flush();
+  delay(2000);
+  if (id2 == String("2") && flag != 2)
+  {
+    String T = Data.substring(42, 44);
+    String H = Data.substring(50, 52);
+    Serial.println("My id is CAGE 2");
+    // Serial.println(Data.substring(22,24)); // This is Tempreture
+    //Serial.println(Data.substring(38,40)); // This is Humidity
+    Serial.println(T.toInt());
+    Serial.println(H.toInt());
+    json.set("/CAGE2 Temp", T.toInt());
+    json.set("/CAGE2 Humi", H.toInt());
+    lcd.setCursor(4, 0);
+    lcd.print("CAGE 2");
+    lcd.setCursor(0, 1);
+    lcd.print("Temp:" + String(T));
+    lcd.setCursor(9, 1);
+    lcd.print("Humi:" + String(H));
+    Firebase.updateNode(firebaseData, "/CAN", json);
+    flag = 2;
+    delay(2000);
+    return;
+  }
+
+  if (id3 == String("3") )
+  {
+    String T = Data.substring(69, 71);
+    String H = Data.substring(77, 72);
+    Serial.println("My id is CAGE 3");
+    // Serial.println(Data.substring(22,24)); // This is Tempreture
+    //Serial.println(Data.substring(38,40)); // This is Humidity
+    Serial.println(T.toInt());
+    Serial.println(H.toInt());
+    json.set("/CAGE3 Temp", T.toInt());
+    json.set("/CAGE3 Humi", H.toInt());
+    lcd.setCursor(4, 0);
+    lcd.print("CAGE 3");
+    lcd.setCursor(0, 1);
+    lcd.print("Temp:" + String(T));
+    lcd.setCursor(9, 1);
+    lcd.print("Humi:" + String(H));
+    Firebase.updateNode(firebaseData, "/CAN", json);
+    delay(1000);
+  }
+  Data = "";
+
+  Serial2.flush();
+  //  if (millis() > dtime)
+  //  {
+  //    Serial2.end();
+  //    Serial2.begin(9600);
+  //    Data = "";
+  //    dtime = millis();
+  //  }
+
+
+}
