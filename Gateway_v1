@@ -1,4 +1,4 @@
-// Improved using flag 
+// This is properly toggling can modulle
 
 #include <FirebaseESP32.h>
 #include <LiquidCrystal_I2C.h>
@@ -9,7 +9,7 @@
 
 LiquidCrystal_I2C lcd(0x3F, 16, 2);
 int dtime = 10000;
-int flag = 0;
+int flag = 1;
 #define FIREBASE_HOST "https://suraj-project-88bc7-default-rtdb.asia-southeast1.firebasedatabase.app"
 #define FIREBASE_AUTH "AIzaSyAiFmLr3MneY6SZbr47QjwE40rgjzgfn0k"
 
@@ -70,7 +70,7 @@ void setup() {
     lcd.clear();
   }
   Serial.println(" CONNECTED");
-  lcd.setCursor(0, 1);
+  lcd.setCursor(0, 0);
   lcd.print("Connected");
   delay (3000);
   lcd.clear();
@@ -113,29 +113,29 @@ void loop() {
   String id1 = Data.substring(0, 1);
   String T1 =  Data.substring(15, 17);
   String H1 =  Data.substring(23, 25);
-  Serial.println(id1);
-  Serial.println(T1);
-  Serial.println(H1);
+//  Serial.println(id1);
+//  Serial.println(T1);
+//  Serial.println(H1);
 
   String id2 = Data.substring(27, 28);
   String T2 =  Data.substring(42, 44);
   String H2 =  Data.substring(50, 52);
-  Serial.println(id2);
-  Serial.println(T2);
-  Serial.println(H2);
+//  Serial.println(id2);
+//  Serial.println(T2);
+//  Serial.println(H2);
 
   String id3 = Data.substring(54, 55);
   String T3 =  Data.substring(69, 71);
   String H3 =  Data.substring(77, 72);
-  Serial.println(id2);
-  Serial.println(T2);
-  Serial.println(H2);
+//  Serial.println(id2);
+//  Serial.println(T2);
+//  Serial.println(H2);
 
 
   delay(2000);
 
 
-  if (id1 == String("1") && flag != 1)
+  if (id1 == String("1") && flag == 1)
   {
     Serial.println("My id is CAGE 1");
     String T = Data.substring(15, 17);
@@ -153,14 +153,14 @@ void loop() {
     json.set("/CAGE1 Temp", T.toInt());
     json.set("/CAGE1 Humi", H.toInt());
     Firebase.updateNode(firebaseData, "/CAN", json);
-    flag = 1;
+    flag = 2;
     delay(2000);
     return;
   }
   delay(100);
   // Serial2.flush();
   delay(2000);
-  if (id2 == String("2") && flag != 2)
+  if (id2 == String("2") && flag == 2 )
   {
     String T = Data.substring(42, 44);
     String H = Data.substring(50, 52);
@@ -178,15 +178,15 @@ void loop() {
     lcd.setCursor(9, 1);
     lcd.print("Humi:" + String(H));
     Firebase.updateNode(firebaseData, "/CAN", json);
-    flag = 2;
+    flag = 3;
     delay(2000);
     return;
   }
 
-  if (id3 == String("3") )
+  if (id3 == String("3") && flag ==3   )
   {
     String T = Data.substring(69, 71);
-    String H = Data.substring(77, 72);
+    String H = Data.substring(77, 79);
     Serial.println("My id is CAGE 3");
     // Serial.println(Data.substring(22,24)); // This is Tempreture
     //Serial.println(Data.substring(38,40)); // This is Humidity
@@ -201,11 +201,15 @@ void loop() {
     lcd.setCursor(9, 1);
     lcd.print("Humi:" + String(H));
     Firebase.updateNode(firebaseData, "/CAN", json);
-    delay(1000);
+    flag = 1;
+    delay(2000);
+    return;
+
   }
-  Data = "";
+//  Data = "";
 
   Serial2.flush();
+  Serial.flush();
   //  if (millis() > dtime)
   //  {
   //    Serial2.end();
